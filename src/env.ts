@@ -9,6 +9,8 @@ export const env = createEnv({
 	 */
 	server: {
 		OPEN_AI_API_KEY: z.string().min(1),
+		BINANCE_API_KEY: z.string(),
+		BINANCE_API_SECRET: z.string(),
 	},
 	/*
 	 * Environment variables available on the client (and server).
@@ -25,7 +27,9 @@ export const env = createEnv({
 	 * 💡 You'll get type errors if not all variables from `server` & `client` are included here.
 	 */
 	runtimeEnv: {
-		OPEN_AI_API_KEY: process.env.OPEN_AI_API_KEY,
+		OPEN_AI_API_KEY: process.env.OPENAI_API_KEY,
 		NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
+		BINANCE_API_KEY: process.env.BINANCE_API_KEY,
+		BINANCE_API_SECRET: process.env.BINANCE_API_SECRET,
 	},
 });

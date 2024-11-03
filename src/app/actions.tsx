@@ -1,11 +1,14 @@
-import { createAI } from 'ai/rsc';
-import { openai } from '@ai-sdk/openai';
-import { CoreMessage,generateId } from "ai";
-import { z } from 'zod';
+import { createAI,getMutableAIState,streamUI } from 'ai/rsc';
 import { ReactNode } from 'react';
-import type { ToolInvocation } from 'ai';
-
-
+import { CoreMessage,generateId,type ToolInvocation } from 'ai';
+import { openai } from '@ai-sdk/openai'
+import { BotCard,BotMessage } from '@/components/llm-crypto/UserMessage';
+import { Loader2 } from 'lucide-react';
+import { z } from 'zod';
+import { MainClient } from 'binance';
+import { PriceSkeleton } from '@/components/llm-crypto/price-skeleton';
+import { env } from '@/env';
+//Hello! I'm a crypto assistant, designed to help you find information about cryptocurrencies. I can provide price data, stats, and other useful information.
 // Define the AI state and UI state types
 export type AIState = Array<{
 	id?: number;
@@ -14,14 +17,104 @@ export type AIState = Array<{
 	content: string;
 }>;
 
-export const sendMessage = async (message: string) => {
+
+const binance = new MainClient({
+	api_key: env.BINANCE_API_KEY,
+	api_secret: env.BINANCE_API_SECRET,
+});
+
+export const sendMessage = async (message: string): Promise<{
+	id: string,
+	role: 'user' | 'assistant',
+	display: ReactNode
+}> => {
 	'use server';
 	console.log(message);
+	const history = getMutableAIState<typeof AI>();
+
+	history.update([
+		...history.get(),
+		{
+			role: "user",
+			content: message
+		}
+	]);
+
+	const reply = await streamUI({
+		model: openai("gpt-4-turbo-2024-04-09"),
+		messages: [
+			{
+				role: "system",
+				content: contentMessage,
+				toolInvocations: []
+			},
+			...history.get()
+		] as CoreMessage[],
+		initial: (
+			<BotMessage>
+				<Loader2 className='w-5 animate-spin stroke-gray-700 ' />
+			</BotMessage>
+
+		),
+		text: ({ content,done }) => {
+			if (done) {
+				history.done([...history.get(),{
+					role: "system",
+					content
+				}])
+			}
+			return <BotMessage>{content}</BotMessage>;
+		},
+		tools: {
+			get_crypto_price: {
+				description:
+					"Get the current price of a given cryptocurrency. Use this to show the price to the user.",
+				parameters: z.object({
+					symbol: z
+						.string()
+						.describe("The name or symbol of the cryptocurrency. e.g. BTC/ETH/SOL.")
+				}),
+				generate: async function* ({ symbol }: { symbol: string }) {
+					yield (
+						<BotCard>
+							<PriceSkeleton />
+						</BotCard>
+					)
+					console.log('symbol',symbol)
+					return null;
+				}
+			},
+			get_crypto_stats: {
+				description:
+					"Get various statistics about a given cryptocurrency. Use this to show additional information about the cryptocurrency to the user.",
+				parameters: z.object({
+					symbol: z
+						.string()
+						.describe("The name or symbol of the cryptocurrency or The full name of the cryptocurrency in lowercase. e.g. bitcoin/ethereum/solana.")
+				}),
+				generate: async function* ({ symbol }: { symbol: string }) {
+					yield (
+						<BotCard>
+							<p>This is a placeholder for crypto stats.</p>
+						</BotCard>
+					)
+					console.log('symbol',symbol)
+					return null;
+				}
+			},
+		}
+	})
+
+	return {
+		id: generateId(),
+		role: 'assistant',
+		display: <p>Hello!</p>
+	}
 
 }
 
 export type UIState = Array<{
-	id: number;
+	id: string;
 	role: 'user' | 'assistant';
 	display: ReactNode;
 	toolInvocations?: ToolInvocation[];
@@ -33,7 +126,7 @@ export type UIState = Array<{
 - this is the System Message that we send to the AI Model (LLM) to intialted the AI
 or this message give the AI model some context or input for tool invocation (calling)
 */
-const contentMessage = `\
+export const contentMessage = `\
 You are a crypto assistant specializing in cryptocurrency data and prices.
 
 Guidelines:
