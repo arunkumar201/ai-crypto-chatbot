@@ -5,7 +5,7 @@ interface UseAtBottomOptions {
 	containerRef?: React.RefObject<HTMLElement>;
 }
 
-const useAtBottom = ({
+export const useAtBottom = ({
 	offset = 0,
 	containerRef,
 }: UseAtBottomOptions = {}): boolean => {
@@ -31,5 +31,3 @@ const useAtBottom = ({
 
 	return atBottom;
 };
-
-export default useAtBottom;

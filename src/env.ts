@@ -11,6 +11,7 @@ export const env = createEnv({
 		OPEN_AI_API_KEY: z.string().min(1),
 		BINANCE_API_KEY: z.string(),
 		BINANCE_API_SECRET: z.string(),
+		CMC_API_KEY: z.string(), // CoinMarketCap API Key
 	},
 	/*
 	 * Environment variables available on the client (and server).
@@ -31,5 +32,6 @@ export const env = createEnv({
 		NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
 		BINANCE_API_KEY: process.env.BINANCE_API_KEY,
 		BINANCE_API_SECRET: process.env.BINANCE_API_SECRET,
+		CMC_API_KEY: process.env.CMC_API_KEY, //  
 	},
 });

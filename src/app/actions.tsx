@@ -8,9 +8,11 @@ import { BotCard,BotMessage } from '@/components/llm-crypto/UserMessage';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { PriceSkeleton } from '@/components/llm-crypto/price-skeleton';
-import { env } from '@/env';
-import { get_crypto_price } from '@/helpers';
+import { get_crypto_price,get_crypto_stats } from '@/helpers';
 import { PriceCard } from '@/components/llm-crypto/price-card';
+import { wait } from '@/lib/wait';
+import { Stats } from '@/components/llm-crypto/stats';
+import { StatsSkeleton } from '@/components/llm-crypto/StatsSkeleton';
 //Hello! I'm a crypto assistant, designed to help you find information about cryptocurrencies. I can provide price data, stats, and other useful information.
 // Define the AI state and UI state types
 export type AIState = Array<{
@@ -99,18 +101,38 @@ export const sendMessage = async (message: string): Promise<{
 				description:
 					"Get various statistics about a given cryptocurrency. Use this to show additional information about the cryptocurrency to the user.",
 				parameters: z.object({
-					symbol: z
+					slug: z
 						.string()
 						.describe("The name or symbol of the cryptocurrency or The full name of the cryptocurrency in lowercase. e.g. bitcoin/ethereum/solana.")
 				}),
-				generate: async function* ({ symbol }: { symbol: string }) {
+				generate: async function* ({ slug }: { slug: string; }) {
 					yield (
 						<BotCard>
-							<p>This is a placeholder for crypto stats.</p>
+							<StatsSkeleton />
 						</BotCard>
-					)
-					console.log('symbol',symbol)
-					return null;
+					);
+					console.log('slug',slug)
+					const marketStats = await get_crypto_stats({ slug });
+					await wait(1000);
+
+					history.done([
+						...history.get(),
+						{
+							role: 'assistant',
+							name: 'get_crypto_price',
+							content: `[Stats of ${marketStats?.symbol}]`,
+						},
+					]);
+
+					if (!marketStats) {
+						return <BotMessage>No data found for {slug}</BotMessage>;
+					}
+
+					return (
+						<BotCard>
+							<Stats {...marketStats} />
+						</BotCard>
+					);
 				}
 			},
 		}
@@ -118,7 +140,7 @@ export const sendMessage = async (message: string): Promise<{
 	return {
 		id: generateId(),
 		role: 'assistant' as const,
-		display: <div className='flex flex-col justify-center items-center w-full h-full  text-xl sm:text-md'>{reply.value}</div>
+		display: reply.value
 	}
 
 }

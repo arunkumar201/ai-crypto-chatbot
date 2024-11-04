@@ -2,7 +2,7 @@
 
 import { useEnterSubmit } from '@/hooks/useEnterSubmit';
 import Form from 'next/form'
-import { SubmitHandler,useForm } from 'react-hook-form'
+import { FieldValues,SubmitHandler,useForm } from 'react-hook-form'
 import TextAreaAutoSize from 'react-textarea-autosize'
 import { Button } from './ui/button';
 import { ArrowDownIcon,PlusIcon } from 'lucide-react';
@@ -12,6 +12,7 @@ import { AI } from '@/app/actions';
 import { UserMessage } from './llm-crypto/UserMessage';
 import { generateId } from 'ai';
 import { AiChatList } from './AiChatList';
+import { ChatScrollAnchor } from './ChatScrollAnchor';
 export const ChatInputForm = () => {
 	const chatForm = useForm();
 	const { formRef,onkeyDown } = useEnterSubmit({});
@@ -19,8 +20,9 @@ export const ChatInputForm = () => {
 
 	const { sendMessage } = useActions<typeof AI>()
 
-	const onSubmit: SubmitHandler<TChatInputSchema> = async (data) => {
-		const value = data.message.trim();
+
+	const onSubmit: SubmitHandler<TChatInputSchema> = async ({ message }) => {
+		const value = message.trim();
 		formRef.current?.reset();
 		if (!value) {
 			return;
@@ -45,11 +47,13 @@ export const ChatInputForm = () => {
 
 	return (
 		<>
-			<AiChatList message={messages} />
-
+			<div className="pb-[26px] pt-4 md:pt-10 overflow-y-scroll max-h-svh scroll-m-0 flex-1 w-full">
+				<AiChatList message={messages} />
+				<ChatScrollAnchor messages={messages} />
+			</div>
 			<div className='mx-auto sm:max-w-2xl px-4 md:px-0  md:py-0 w-full py-3'>
 				<div className="px-4 flex justify-center flex-col py-2 space-y-4 border-t shadow-lg bg-background sm:rounded-t-xl sm:border md:py-4 bg-white">
-					<Form ref={formRef} onSubmit={chatForm.handleSubmit(onSubmit)} action={() => { }}>
+					<Form ref={formRef} onSubmit={chatForm.handleSubmit(onSubmit as SubmitHandler<FieldValues>)} action={() => { }}>
 						<div className='relative flex items-center gap-2 flex-col  overflow-hidden max-h-60 grow bg-background rounded-md border'>
 							<TextAreaAutoSize
 								tabIndex={0}
