@@ -27,7 +27,7 @@ export const AIChatInfo = () => {
 	];
 
 	return (
-		<div className="w-full max-w-2xl mx-auto p-4 space-y-6 relative -top-[2rem]">
+		<div className="w-full max-w-2xl mx-auto p-4 space-y-6 relative -top-[2rem] md:h-fit h-[43rem]">
 			<Card className="bg-white shadow-lg">
 				<CardHeader>
 					<CardTitle className="text-2xl font-bold text-gray-800">
