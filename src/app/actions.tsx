@@ -1,13 +1,16 @@
 import { createAI,getMutableAIState,streamUI } from 'ai/rsc';
 import { ReactNode } from 'react';
 import { CoreMessage,generateId,type ToolInvocation } from 'ai';
-import { openai } from '@ai-sdk/openai'
+// import { openai } from '@ai-sdk/openai'
+import { groq } from '@ai-sdk/groq';
+
 import { BotCard,BotMessage } from '@/components/llm-crypto/UserMessage';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import { MainClient } from 'binance';
 import { PriceSkeleton } from '@/components/llm-crypto/price-skeleton';
 import { env } from '@/env';
+import { get_crypto_price } from '@/helpers';
+import { PriceCard } from '@/components/llm-crypto/price-card';
 //Hello! I'm a crypto assistant, designed to help you find information about cryptocurrencies. I can provide price data, stats, and other useful information.
 // Define the AI state and UI state types
 export type AIState = Array<{
@@ -16,12 +19,6 @@ export type AIState = Array<{
 	role: 'user' | 'assistant' | 'system';
 	content: string;
 }>;
-
-
-const binance = new MainClient({
-	api_key: env.BINANCE_API_KEY,
-	api_secret: env.BINANCE_API_SECRET,
-});
 
 export const sendMessage = async (message: string): Promise<{
 	id: string,
@@ -41,7 +38,7 @@ export const sendMessage = async (message: string): Promise<{
 	]);
 
 	const reply = await streamUI({
-		model: openai("gpt-4-turbo-2024-04-09"),
+		model: groq("llama3-8b-8192"),
 		messages: [
 			{
 				role: "system",
@@ -81,7 +78,21 @@ export const sendMessage = async (message: string): Promise<{
 						</BotCard>
 					)
 					console.log('symbol',symbol)
-					return null;
+
+					const { price,percentageChange,delta } = await get_crypto_price({ symbol });
+
+					history.done([
+						...history.get(),
+						{
+							role: "assistant",
+							name: "get_crypto_price",
+							content: `The current price of ${symbol} is ${price} USD, and the percentage change over the last 24 hours is ${percentageChange}%.`,
+						}
+					])
+
+					return <BotCard>
+						<PriceCard name={symbol} price={price} delta={delta} />
+					</BotCard>;
 				}
 			},
 			get_crypto_stats: {
@@ -104,11 +115,10 @@ export const sendMessage = async (message: string): Promise<{
 			},
 		}
 	})
-
 	return {
 		id: generateId(),
-		role: 'assistant',
-		display: <p>Hello!</p>
+		role: 'assistant' as const,
+		display: <div className='flex flex-col justify-center items-center w-full h-full  text-xl sm:text-md'>{reply.value}</div>
 	}
 
 }
