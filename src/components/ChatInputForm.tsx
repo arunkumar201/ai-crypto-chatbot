@@ -13,6 +13,7 @@ import { UserMessage } from './llm-crypto/UserMessage';
 import { generateId } from 'ai';
 import { AiChatList } from './AiChatList';
 import { ChatScrollAnchor } from './ChatScrollAnchor';
+import { AIChatInfo } from './llm-crypto/AIChatInfo';
 export const ChatInputForm = () => {
 	const chatForm = useForm();
 	const { formRef,onkeyDown } = useEnterSubmit({});
@@ -48,9 +49,12 @@ export const ChatInputForm = () => {
 	return (
 		<>
 			<div className="pb-[26px] pt-4 md:pt-10 overflow-y-scroll max-h-svh scroll-m-0 flex-1 w-full">
-				<AiChatList message={messages} />
-				<ChatScrollAnchor messages={messages} />
-			</div>
+				{messages.length > 0 ? <>
+					<AiChatList message={messages} />
+					<ChatScrollAnchor messages={messages} />
+				</> : <AIChatInfo />
+				}
+			</div> 
 			<div className='mx-auto sm:max-w-2xl px-4 md:px-0  md:py-0 w-full py-3'>
 				<div className="px-4 flex justify-center flex-col py-2 space-y-4 border-t shadow-lg bg-background sm:rounded-t-xl sm:border md:py-4 bg-white">
 					<Form ref={formRef} onSubmit={chatForm.handleSubmit(onSubmit as SubmitHandler<FieldValues>)} action={() => { }}>
